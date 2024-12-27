@@ -61,106 +61,118 @@ const drawFunction = () => {
     msgRef.innerHTML = "&#x1F60E; <br> It's a Draw!";
 };
 
-// Minimax Algorithm for AI
-const minimax = (board, depth, isMaximizing) => {
-    const winner = checkWinner(board);
-    if (winner === "O") return 10 - depth;
-    if (winner === "X") return depth - 10;
-    if (board.every(cell => cell !== "")) return 0; // Draw
+// Minimax Algorithm for AI decision making
+const minimax = (board, depth, isMaximizingPlayer) => {
+    const scores = {
+        X: -10,
+        O: 10,
+        tie: 0,
+    };
 
-    if (isMaximizing) {
-        let best = -Infinity;
+    let winner = checkWinner(board);
+    if (winner !== null) {
+        return scores[winner];
+    }
+
+    if (isMaximizingPlayer) {
+        let bestScore = -Infinity;
         for (let i = 0; i < board.length; i++) {
             if (board[i] === "") {
-                board[i] = "O"; // AI's move
-                best = Math.max(best, minimax(board, depth + 1, false));
+                board[i] = "O"; // AI plays 'O'
+                let score = minimax(board, depth + 1, false);
                 board[i] = ""; // Undo move
+                bestScore = Math.max(score, bestScore);
             }
         }
-        return best;
+        return bestScore;
     } else {
-        let best = Infinity;
+        let bestScore = Infinity;
         for (let i = 0; i < board.length; i++) {
             if (board[i] === "") {
-                board[i] = "X"; // Player's move
-                best = Math.min(best, minimax(board, depth + 1, true));
+                board[i] = "X"; // Player plays 'X'
+                let score = minimax(board, depth + 1, true);
                 board[i] = ""; // Undo move
+                bestScore = Math.min(score, bestScore);
             }
         }
-        return best;
+        return bestScore;
     }
 };
 
-// Function to determine the best move for AI
-const bestMove = () => {
-    let bestVal = -Infinity;
-    let move = -1;
-    let board = Array.from(btnRef).map(button => button.innerText);
-
-    for (let i = 0; i < board.length; i++) {
-        if (board[i] === "") {
-            board[i] = "O"; // AI's move
-            let moveVal = minimax(board, 0, false);
-            board[i] = ""; // Undo move
-
-            if (moveVal > bestVal) {
-                move = i;
-                bestVal = moveVal;
-            }
-        }
-    }
-    return move;
-};
-
-// Check for a win or draw
+// Check for winner
 const checkWinner = (board) => {
     for (let pattern of winningPattern) {
         const [a, b, c] = pattern;
-        if (board[a] === board[b] && board[b] === board[c] && board[a] !== "") {
-            return board[a]; // 'X' or 'O'
+        if (board[a] && board[a] === board[b] && board[b] === board[c]) {
+            return board[a];
         }
     }
-    return null; // No winner
+    if (board.includes("")) {
+        return null;
+    }
+    return "tie"; // Return 'tie' if no winner and no empty spots
+};
+
+// AI's optimal move
+const computerMove = () => {
+    let board = Array.from(btnRef).map(button => button.innerText);
+    let bestMove = null;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i < board.length; i++) {
+        if (board[i] === "") {
+            board[i] = "O"; // Try AI move
+            let score = minimax(board, 0, false);
+            board[i] = ""; // Undo move
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = i;
+            }
+        }
+    }
+
+    // Make the best move for AI
+    btnRef[bestMove].innerText = "O";
+    btnRef[bestMove].disabled = true;
+    count++;
+    winChecker();
 };
 
 // Check for a win
 const winChecker = () => {
     let board = Array.from(btnRef).map(button => button.innerText);
-    const winner = checkWinner(board);
-    
-    if (winner) {
-        winFunction(winner, winningPattern.find(pattern => {
-            return pattern.every(index => btnRef[index].innerText === winner);
-        }));
-        return true;
-    }
+    for (let i of winningPattern) {
+        let [a, b, c] = i;
+        let element1 = board[a];
+        let element2 = board[b];
+        let element3 = board[c];
 
+        if (element1 !== "" && element2 !== "" && element3 !== "") {
+            if (element1 === element2 && element2 === element3) {
+                winFunction(element1, i);
+                return;
+            }
+        }
+    }
     if (count === 9) {
         drawFunction();
-        return true;
     }
-
-    return false;
 };
 
 // User and Computer Moves
 btnRef.forEach((element) => {
     element.addEventListener("click", () => {
-        if (element.innerText === "" && !isVsComputer) {
+        if (element.innerText === "") {
             element.innerText = "X";
             element.disabled = true;
             count++;
-            if (winChecker()) return;
+            winChecker();
 
-            // If it's a draw or win, stop the game
-            if (count < 9) {
+            // Computer's turn after user clicks
+            if (isVsComputer && count < 9) {
                 setTimeout(() => {
-                    const move = bestMove();
-                    btnRef[move].innerText = "O";
-                    btnRef[move].disabled = true;
-                    count++;
-                    if (winChecker()) return;
-                }, 500); // Delay for better UX
+                    computerMove();
+                }, 500); // Delay for a better user experience
             }
         }
     });
