@@ -61,121 +61,106 @@ const drawFunction = () => {
     msgRef.innerHTML = "&#x1F60E; <br> It's a Draw!";
 };
 
-// Computer's Turn Logic
-const computerMove = () => {
-    let emptyCells = [];
-    btnRef.forEach((button, index) => {
-        if (button.innerText === "") {
-            emptyCells.push(index);
-        }
-    });
+// Minimax Algorithm for AI
+const minimax = (board, depth, isMaximizing) => {
+    const winner = checkWinner(board);
+    if (winner === "O") return 10 - depth;
+    if (winner === "X") return depth - 10;
+    if (board.every(cell => cell !== "")) return 0; // Draw
 
-    // Check if computer can win
-    for (let i of winningPattern) {
-        let [a, b, c] = i;
-        if (
-            btnRef[a].innerText === "O" &&
-            btnRef[b].innerText === "O" &&
-            btnRef[c].innerText === ""
-        ) {
-            btnRef[c].innerText = "O";
-            btnRef[c].disabled = true;
-            return;
+    if (isMaximizing) {
+        let best = -Infinity;
+        for (let i = 0; i < board.length; i++) {
+            if (board[i] === "") {
+                board[i] = "O"; // AI's move
+                best = Math.max(best, minimax(board, depth + 1, false));
+                board[i] = ""; // Undo move
+            }
         }
-        if (
-            btnRef[a].innerText === "O" &&
-            btnRef[c].innerText === "O" &&
-            btnRef[b].innerText === ""
-        ) {
-            btnRef[b].innerText = "O";
-            btnRef[b].disabled = true;
-            return;
+        return best;
+    } else {
+        let best = Infinity;
+        for (let i = 0; i < board.length; i++) {
+            if (board[i] === "") {
+                board[i] = "X"; // Player's move
+                best = Math.min(best, minimax(board, depth + 1, true));
+                board[i] = ""; // Undo move
+            }
         }
-        if (
-            btnRef[b].innerText === "O" &&
-            btnRef[c].innerText === "O" &&
-            btnRef[a].innerText === ""
-        ) {
-            btnRef[a].innerText = "O";
-            btnRef[a].disabled = true;
-            return;
+        return best;
+    }
+};
+
+// Function to determine the best move for AI
+const bestMove = () => {
+    let bestVal = -Infinity;
+    let move = -1;
+    let board = Array.from(btnRef).map(button => button.innerText);
+
+    for (let i = 0; i < board.length; i++) {
+        if (board[i] === "") {
+            board[i] = "O"; // AI's move
+            let moveVal = minimax(board, 0, false);
+            board[i] = ""; // Undo move
+
+            if (moveVal > bestVal) {
+                move = i;
+                bestVal = moveVal;
+            }
         }
     }
+    return move;
+};
 
-    // Block user from winning
-    for (let i of winningPattern) {
-        let [a, b, c] = i;
-        if (
-            btnRef[a].innerText === "X" &&
-            btnRef[b].innerText === "X" &&
-            btnRef[c].innerText === ""
-        ) {
-            btnRef[c].innerText = "O";
-            btnRef[c].disabled = true;
-            return;
-        }
-        if (
-            btnRef[a].innerText === "X" &&
-            btnRef[c].innerText === "X" &&
-            btnRef[b].innerText === ""
-        ) {
-            btnRef[b].innerText = "O";
-            btnRef[b].disabled = true;
-            return;
-        }
-        if (
-            btnRef[b].innerText === "X" &&
-            btnRef[c].innerText === "X" &&
-            btnRef[a].innerText === ""
-        ) {
-            btnRef[a].innerText = "O";
-            btnRef[a].disabled = true;
-            return;
+// Check for a win or draw
+const checkWinner = (board) => {
+    for (let pattern of winningPattern) {
+        const [a, b, c] = pattern;
+        if (board[a] === board[b] && board[b] === board[c] && board[a] !== "") {
+            return board[a]; // 'X' or 'O'
         }
     }
-
-    // Make a random move
-    let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-    btnRef[randomIndex].innerText = "O";
-    btnRef[randomIndex].disabled = true;
+    return null; // No winner
 };
 
 // Check for a win
 const winChecker = () => {
-    for (let i of winningPattern) {
-        let [a, b, c] = i;
-        let element1 = btnRef[a].innerText;
-        let element2 = btnRef[b].innerText;
-        let element3 = btnRef[c].innerText;
-
-        if (element1 !== "" && element2 !== "" && element3 !== "") {
-            if (element1 === element2 && element2 === element3) {
-                winFunction(element1, i);
-                return;
-            }
-        }
+    let board = Array.from(btnRef).map(button => button.innerText);
+    const winner = checkWinner(board);
+    
+    if (winner) {
+        winFunction(winner, winningPattern.find(pattern => {
+            return pattern.every(index => btnRef[index].innerText === winner);
+        }));
+        return true;
     }
+
     if (count === 9) {
         drawFunction();
+        return true;
     }
+
+    return false;
 };
 
 // User and Computer Moves
 btnRef.forEach((element) => {
     element.addEventListener("click", () => {
-        if (element.innerText === "") {
+        if (element.innerText === "" && !isVsComputer) {
             element.innerText = "X";
             element.disabled = true;
             count++;
-            winChecker();
+            if (winChecker()) return;
 
-            // Computer's turn after user clicks
-            if (isVsComputer && count < 9) {
+            // If it's a draw or win, stop the game
+            if (count < 9) {
                 setTimeout(() => {
-                    computerMove();
+                    const move = bestMove();
+                    btnRef[move].innerText = "O";
+                    btnRef[move].disabled = true;
                     count++;
-                    winChecker();
-                }, 500); // Delay for a better user experience
+                    if (winChecker()) return;
+                }, 500); // Delay for better UX
             }
         }
     });
