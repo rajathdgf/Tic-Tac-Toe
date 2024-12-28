@@ -5,12 +5,24 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic Tac Toe -AR sir</title>
+    <title>Tic Tac Toe - AR Sir</title>
     <link href="style.css" rel="stylesheet" type="text/css">
-
 </head>
 
 <body>
+    <div class="menu-bar">
+        <div class="score">
+            Player Wins: <span id="player-wins">0</span>
+        </div>
+        <div class="score">
+            Computer Wins: <span id="computer-wins">0</span>
+        </div>
+        <div class="score">
+            Draws: <span id="draws">0</span>
+        </div>
+        <button id="claim-reward" class="hide">Claim Reward</button>
+    </div>
+
     <div class="wrapper">
         <div class="container">
             <button class="button-option"></button>
@@ -30,7 +42,14 @@
         <p id="message">Sample Message</p>
         <button id="new-game">New Game</button>
     </div>
+
+    <div class="reward-popup hide">
+        <p id="reward-message">Congratulations! You've earned a discount of <span id="discount"></span>%!</p>
+        <p>Use code: <span id="discount-code"></span></p>
+        <button id="copy-code">Copy Code</button>
+    </div>
+
+    <script src="script.js"></script>
 </body>
-<script src="script.js"></script>
 
 </html>
