@@ -1,3 +1,4 @@
+// Select DOM elements
 let btnRef = document.querySelectorAll(".button-option");
 let popupRef = document.querySelector(".popup");
 let newgameBtn = document.getElementById("new-game");
@@ -18,7 +19,7 @@ let computerWins = 0;
 let draws = 0;
 let playerWinCount = 0;
 
-// Winning Pattern Array
+// Winning Patterns
 let winningPattern = [
     [0, 1, 2],
     [0, 3, 6],
@@ -31,17 +32,17 @@ let winningPattern = [
 ];
 
 // Game Variables
-let xTurn = true; // Player 'X' always starts
-let count = 0; // To track the total moves made
-let isVsComputer = true; // Enable computer opponent
+let xTurn = true; // Player starts with 'X'
+let count = 0; // Track moves
+let isVsComputer = true; // Computer opponent enabled
 
-// Disable All Buttons
+// Disable all buttons
 const disableButtons = () => {
     btnRef.forEach((element) => (element.disabled = true));
     popupRef.classList.remove("hide");
 };
 
-// Enable all buttons (For New Game and Restart)
+// Enable all buttons for new/restart game
 const enableButtons = () => {
     btnRef.forEach((element) => {
         element.innerText = "";
@@ -53,7 +54,7 @@ const enableButtons = () => {
     count = 0;
 };
 
-// Function for a win
+// Handle win logic
 const winFunction = (letter, pattern) => {
     disableButtons();
     pattern.forEach((index) => btnRef[index].classList.add("winning"));
@@ -62,13 +63,14 @@ const winFunction = (letter, pattern) => {
             element.classList.add("fall");
         }
     });
+
     if (letter === "X") {
         msgRef.innerHTML = "&#x1F389; <br> 'X' Wins!";
         playerWins++;
         playerWinCount++;
         playerWinsRef.innerText = playerWins;
 
-        // Check if reward should be shown
+        // Check for reward eligibility
         if (playerWinCount === 5) {
             claimRewardBtn.classList.remove("hide");
         }
@@ -79,13 +81,133 @@ const winFunction = (letter, pattern) => {
     }
 };
 
-// Function for a draw
+// Handle draw logic
 const drawFunction = () => {
     disableButtons();
     msgRef.innerHTML = "&#x1F60E; <br> It's a Draw!";
     draws++;
     drawsRef.innerText = draws;
 };
+
+// Computer AI move
+const computerMove = () => {
+    let emptyCells = [];
+    btnRef.forEach((button, index) => {
+        if (button.innerText === "") {
+            emptyCells.push(index);
+        }
+    });
+
+    // Check if computer can win
+    for (let i of winningPattern) {
+        let [a, b, c] = i;
+        if (
+            btnRef[a].innerText === "O" &&
+            btnRef[b].innerText === "O" &&
+            btnRef[c].innerText === ""
+        ) {
+            btnRef[c].innerText = "O";
+            btnRef[c].disabled = true;
+            return;
+        }
+        if (
+            btnRef[a].innerText === "O" &&
+            btnRef[c].innerText === "O" &&
+            btnRef[b].innerText === ""
+        ) {
+            btnRef[b].innerText = "O";
+            btnRef[b].disabled = true;
+            return;
+        }
+        if (
+            btnRef[b].innerText === "O" &&
+            btnRef[c].innerText === "O" &&
+            btnRef[a].innerText === ""
+        ) {
+            btnRef[a].innerText = "O";
+            btnRef[a].disabled = true;
+            return;
+        }
+    }
+
+    // Block player from winning
+    for (let i of winningPattern) {
+        let [a, b, c] = i;
+        if (
+            btnRef[a].innerText === "X" &&
+            btnRef[b].innerText === "X" &&
+            btnRef[c].innerText === ""
+        ) {
+            btnRef[c].innerText = "O";
+            btnRef[c].disabled = true;
+            return;
+        }
+        if (
+            btnRef[a].innerText === "X" &&
+            btnRef[c].innerText === "X" &&
+            btnRef[b].innerText === ""
+        ) {
+            btnRef[b].innerText = "O";
+            btnRef[b].disabled = true;
+            return;
+        }
+        if (
+            btnRef[b].innerText === "X" &&
+            btnRef[c].innerText === "X" &&
+            btnRef[a].innerText === ""
+        ) {
+            btnRef[a].innerText = "O";
+            btnRef[a].disabled = true;
+            return;
+        }
+    }
+
+    // Make a random move
+    let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    btnRef[randomIndex].innerText = "O";
+    btnRef[randomIndex].disabled = true;
+};
+
+// Check for a win or draw
+const winChecker = () => {
+    for (let i of winningPattern) {
+        let [a, b, c] = i;
+        let element1 = btnRef[a].innerText;
+        let element2 = btnRef[b].innerText;
+        let element3 = btnRef[c].innerText;
+
+        if (element1 !== "" && element2 !== "" && element3 !== "") {
+            if (element1 === element2 && element2 === element3) {
+                winFunction(element1, i);
+                return;
+            }
+        }
+    }
+    if (count === 9) {
+        drawFunction();
+    }
+};
+
+// Player and Computer Moves
+btnRef.forEach((element) => {
+    element.addEventListener("click", () => {
+        if (element.innerText === "") {
+            element.innerText = "X";
+            element.disabled = true;
+            count++;
+            winChecker();
+
+            // Computer's turn after player's move
+            if (isVsComputer && count < 9) {
+                setTimeout(() => {
+                    computerMove();
+                    count++;
+                    winChecker();
+                }, 500);
+            }
+        }
+    });
+});
 
 // Claim Reward Logic
 claimRewardBtn.addEventListener("click", () => {
@@ -106,5 +228,9 @@ copyCodeBtn.addEventListener("click", () => {
     });
 });
 
-// Existing logic for winChecker, computerMove, and event listeners goes here...
-// (Keep the rest of your existing game logic.)
+// New Game and Restart
+newgameBtn.addEventListener("click", enableButtons);
+restartBtn.addEventListener("click", enableButtons);
+
+// Initialize game
+window.onload = enableButtons;
