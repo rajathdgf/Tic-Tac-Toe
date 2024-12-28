@@ -61,44 +61,6 @@ const drawFunction = () => {
     msgRef.innerHTML = "&#x1F60E; <br> It's a Draw!";
 };
 
-// Minimax Algorithm for AI decision making
-const minimax = (board, depth, isMaximizingPlayer) => {
-    const scores = {
-        X: -10,
-        O: 10,
-        tie: 0,
-    };
-
-    let winner = checkWinner(board);
-    if (winner !== null) {
-        return scores[winner];
-    }
-
-    if (isMaximizingPlayer) {
-        let bestScore = -Infinity;
-        for (let i = 0; i < board.length; i++) {
-            if (board[i] === "") {
-                board[i] = "O"; // AI plays 'O'
-                let score = minimax(board, depth + 1, false);
-                board[i] = ""; // Undo move
-                bestScore = Math.max(score, bestScore);
-            }
-        }
-        return bestScore;
-    } else {
-        let bestScore = Infinity;
-        for (let i = 0; i < board.length; i++) {
-            if (board[i] === "") {
-                board[i] = "X"; // Player plays 'X'
-                let score = minimax(board, depth + 1, true);
-                board[i] = ""; // Undo move
-                bestScore = Math.min(score, bestScore);
-            }
-        }
-        return bestScore;
-    }
-};
-
 // Check for winner
 const checkWinner = (board) => {
     for (let pattern of winningPattern) {
@@ -113,16 +75,37 @@ const checkWinner = (board) => {
     return "tie"; // Return 'tie' if no winner and no empty spots
 };
 
-// AI's optimal move
+// AI's Move Logic with Reduced Power
 const computerMove = () => {
     let board = Array.from(btnRef).map(button => button.innerText);
+
+    // Decide to play optimally or randomly
+    let playRandom = Math.random() < 0.3; // 30% chance for a random move
+
+    if (playRandom) {
+        // Make a random move
+        let emptyCells = [];
+        btnRef.forEach((button, index) => {
+            if (button.innerText === "") {
+                emptyCells.push(index);
+            }
+        });
+        let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        btnRef[randomIndex].innerText = "O";
+        btnRef[randomIndex].disabled = true;
+        count++;
+        winChecker();
+        return;
+    }
+
+    // Otherwise, play with logic (reduced Minimax strategy)
     let bestMove = null;
     let bestScore = -Infinity;
 
     for (let i = 0; i < board.length; i++) {
         if (board[i] === "") {
             board[i] = "O"; // Try AI move
-            let score = minimax(board, 0, false);
+            let score = simplifiedScore(board, false); // Use a simplified evaluation
             board[i] = ""; // Undo move
             if (score > bestScore) {
                 bestScore = score;
@@ -136,6 +119,38 @@ const computerMove = () => {
     btnRef[bestMove].disabled = true;
     count++;
     winChecker();
+};
+
+// Simplified scoring function for reduced Minimax logic
+const simplifiedScore = (board, isMaximizing) => {
+    let winner = checkWinner(board);
+    if (winner === "X") return -10;
+    if (winner === "O") return 10;
+    if (winner === "tie") return 0;
+
+    if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let i = 0; i < board.length; i++) {
+            if (board[i] === "") {
+                board[i] = "O";
+                let score = simplifiedScore(board, false);
+                board[i] = "";
+                bestScore = Math.max(score, bestScore);
+            }
+        }
+        return bestScore;
+    } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < board.length; i++) {
+            if (board[i] === "") {
+                board[i] = "X";
+                let score = simplifiedScore(board, true);
+                board[i] = "";
+                bestScore = Math.min(score, bestScore);
+            }
+        }
+        return bestScore;
+    }
 };
 
 // Check for a win
