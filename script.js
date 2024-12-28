@@ -14,10 +14,15 @@ let discountCodeRef = document.getElementById("discount-code");
 let copyCodeBtn = document.getElementById("copy-code");
 
 // Game Stats
-let playerWins = 0;
-let computerWins = 0;
-let draws = 0;
-let playerWinCount = 0;
+let playerWins = parseInt(localStorage.getItem("playerWins")) || 0;
+let computerWins = parseInt(localStorage.getItem("computerWins")) || 0;
+let draws = parseInt(localStorage.getItem("draws")) || 0;
+let playerWinCount = parseInt(localStorage.getItem("playerWinCount")) || 0;
+
+// Initialize stats display
+playerWinsRef.innerText = playerWins;
+computerWinsRef.innerText = computerWins;
+drawsRef.innerText = draws;
 
 // Winning Patterns
 let winningPattern = [
@@ -70,6 +75,10 @@ const winFunction = (letter, pattern) => {
         playerWinCount++;
         playerWinsRef.innerText = playerWins;
 
+        // Update localStorage
+        localStorage.setItem("playerWins", playerWins);
+        localStorage.setItem("playerWinCount", playerWinCount);
+
         // Check for reward eligibility
         if (playerWinCount === 5) {
             claimRewardBtn.classList.remove("hide");
@@ -78,6 +87,9 @@ const winFunction = (letter, pattern) => {
         msgRef.innerHTML = "&#x1F389; <br> 'O' Wins!";
         computerWins++;
         computerWinsRef.innerText = computerWins;
+
+        // Update localStorage
+        localStorage.setItem("computerWins", computerWins);
     }
 };
 
@@ -87,6 +99,9 @@ const drawFunction = () => {
     msgRef.innerHTML = "&#x1F60E; <br> It's a Draw!";
     draws++;
     drawsRef.innerText = draws;
+
+    // Update localStorage
+    localStorage.setItem("draws", draws);
 };
 
 // Computer AI move
@@ -213,10 +228,11 @@ btnRef.forEach((element) => {
 claimRewardBtn.addEventListener("click", () => {
     let discount = Math.floor(Math.random() * 41) + 10; // Generate 10-50% discount
     let discountCode = `SAVE${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    discountRef.innerText = discount;
+    discountRef.innerText = `${discount}%`;
     discountCodeRef.innerText = discountCode;
     rewardPopupRef.classList.remove("hide");
     playerWinCount = 0; // Reset win count
+    localStorage.setItem("playerWinCount", playerWinCount);
     claimRewardBtn.classList.add("hide");
 });
 
